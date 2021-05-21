@@ -12,17 +12,7 @@ fn main() {
         topics: RefCell::new(topics),
     };
 
-    let component_a = foo::Foo {
-        framework: &framework,
-    };
-
-    let component_b = bar::Bar {
-        framework: &framework,
-    };
-
-    component_a.run();
-    component_b.run();
-
+    dynamic_generation::start_components!();
     for (key, value) in framework.topics.borrow().iter() {
         println!("{}: {:?}", key, value);
     }
