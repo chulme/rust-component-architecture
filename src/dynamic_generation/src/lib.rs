@@ -3,6 +3,7 @@ extern crate proc_macro;
 use convert_case::{Case, Casing};
 use proc_macro::TokenStream;
 use std::fs;
+use std::sync::RwLock;
 
 #[cfg(test)]
 mod tests {
@@ -16,10 +17,14 @@ mod tests {
 pub fn start_components(_: TokenStream) -> TokenStream {
     let components = get_components();
     let mut res: String = "".to_owned();
-
     for c in &components {
-        res.push_str(&format!(
-            "let component_{0} = {0}::{1}{{\n\tframework: &framework,}};\ncomponent_{0}.run();",
+        let p1 = res.push_str(&format!(
+            "
+            let component_{0} = {0}::{1}{{
+                \n\tframework: &framework,
+            }};
+            \ncomponent_{0}.run();
+            ",
             c,
             c.from_case(Case::Kebab).to_case(Case::Pascal)
         ));
