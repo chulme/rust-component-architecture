@@ -1,14 +1,17 @@
-use crate::component::ComponentInterface;
-use crate::component::Framework;
-use crate::component::Run;
+use crate::component::Component;
+use crate::component::Interface;
 
 pub struct Bar<'a> {
-    pub framework: &'a Framework,
+    pub interface: &'a Interface,
 }
 
-impl Run for Bar<'_> {
+impl Component for Bar<'_> {
     fn run(&self) {
-        let res = self.framework.subscribe("/greetings".to_string());
+        let res = self.interface.subscribe("/greetings".to_string());
         println!("Bar received: \n\t\"{:?}\"!", res);
+    }
+
+    fn name(&self) -> &str {
+        return "bar";
     }
 }

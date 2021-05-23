@@ -1,15 +1,18 @@
-use crate::component::ComponentInterface;
-use crate::component::Framework;
-use crate::component::Run;
+use crate::component::Component;
+use crate::component::Interface;
 use crate::component::Value;
 
 pub struct Foo<'a> {
-    pub framework: &'a Framework,
+    pub interface: &'a Interface,
 }
 
-impl Run for Foo<'_> {
+impl Component for Foo<'_> {
     fn run(&self) {
-        self.framework
+        self.interface
             .publish(Value::Str("Hello from Foo!"), "/greetings".to_string());
+    }
+
+    fn name(&self) -> &str {
+        return "foo";
     }
 }
