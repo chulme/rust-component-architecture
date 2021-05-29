@@ -1,44 +1,23 @@
 use actix_web::{middleware, rt::System, web, App, HttpRequest, HttpResponse, HttpServer};
 use env_logger;
-use serde::{Deserialize, Serialize};
-use serde_json;
-use serde_with::serde_as;
-use std::collections::HashMap;
+use serde_json::{json, Map, Value};
 use std::sync::mpsc;
 use std::sync::Mutex;
 use std::thread; // 1.0.101
 
-#[serde_as]
-#[derive(Serialize, Deserialize, Debug)]
-struct TopicsMap {
-    #[serde_as(as = "Vec<(_, _)>")]
-    topics: HashMap<String, i32>,
-}
-
-impl TopicsMap {
-    fn new() -> Self {
-        return TopicsMap {
-            topics: HashMap::new(),
-        };
-    }
-}
-
 /// Get topics
-async fn get_topics(topics: web::Data<Mutex<TopicsMap>>, req: HttpRequest) -> HttpResponse {
+async fn get_topics(
+    topics: web::Data<Mutex<Map<String, Value>>>,
+    req: HttpRequest,
+) -> HttpResponse {
     println!("{:?}", req);
-    let counter = 0;
-    // Increment the counters
-    topics
-        .lock()
-        .unwrap()
-        .topics
-        .insert("/counter".to_string(), counter);
-    topics
-        .lock()
-        .unwrap()
-        .topics
-        .insert("/counter1".to_string(), counter + 1);
-    let body = serde_json::to_string_pretty(&topics.lock().unwrap().topics).unwrap();
+
+    let mut map: Map<String, Value> = topics.lock().unwrap().clone();
+    map.insert("/int".to_string(), json!(2));
+    map.insert("/str".to_string(), json!("hello"));
+    map.insert("/dec".to_string(), json!(9.22));
+
+    let body = serde_json::to_string_pretty(&map).unwrap();
     HttpResponse::Ok().body(body)
 }
 
@@ -53,7 +32,8 @@ pub async fn start_server() {
         let sys = System::new("http-server");
 
         let srv = HttpServer::new(move || {
-            let topics: web::Data<Mutex<TopicsMap>> = web::Data::new(Mutex::new(TopicsMap::new()));
+            let topics: web::Data<Mutex<Map<String, Value>>> =
+                web::Data::new(Mutex::new(Map::new()));
 
             App::new()
                 .app_data(topics.clone()) // add shared state

@@ -19,7 +19,7 @@ fn call_server_topics() -> Result<(), Box<dyn std::error::Error>> {
     res.read_to_string(&mut body)?;
     let v: JsonValue = serde_json::from_str(&body)?;
     println!("{}", v);
-    println!("{}", v["/counter"]);
+    println!("{}", v["/str"]);
 
     Ok(())
 }
