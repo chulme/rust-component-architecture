@@ -5,6 +5,8 @@ use crate::components::*;
 use component::Component;
 use reqwest;
 mod server;
+use serde_json;
+use serde_json::Value as JsonValue;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::io::Read;
@@ -15,8 +17,10 @@ fn call_server_topics() -> Result<(), Box<dyn std::error::Error>> {
     let mut res = reqwest::get("http://127.0.0.1:8080/")?;
     let mut body = String::new();
     res.read_to_string(&mut body)?;
-    let parsed = json::parse(&body);
-    println!("{:?}", parsed);
+    let v: JsonValue = serde_json::from_str(&body)?;
+    println!("{}", v);
+    println!("{}", v["/counter"]);
+
     Ok(())
 }
 
