@@ -1,19 +1,20 @@
 use crate::component::Component;
 use crate::component::Interface;
-use crate::component::Value;
-use std::sync::{Arc, Mutex};
 
 pub struct Foo {
-    pub interface: Arc<Mutex<Interface>>,
+    pub interface: Interface,
 }
 
 impl Component for Foo {
     fn run(&self) {
-        println!("Publishing a message from foo.");
-        self.interface
-            .lock()
-            .unwrap()
-            .publish(Value::Str("Hello from Foo!"), "/greetings".to_string());
+        // let topic = "/hello";
+        // let res = self.interface.subscribe(topic);
+        // println!(
+        //     "{} is subscribed to {}:\n\tRes:{:?}",
+        //     self.name(),
+        //     topic,
+        //     res
+        // );
     }
 
     fn name(&self) -> &str {

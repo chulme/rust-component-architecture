@@ -1,30 +1,52 @@
-use actix_web::{middleware, rt::System, web, App, HttpRequest, HttpResponse, HttpServer};
-use env_logger;
+use actix_web::{rt::System, web, App, Error, HttpRequest, HttpResponse, HttpServer};
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
 use std::sync::mpsc;
 use std::sync::Mutex;
-use std::thread; // 1.0.101
+use std::thread;
 
-/// Get topics
+#[derive(Deserialize, Serialize, Clone, Debug)]
+struct Info {
+    topic: String,
+    data: Value,
+}
+
+// Get all topics
 async fn get_topics(
     topics: web::Data<Mutex<Map<String, Value>>>,
-    req: HttpRequest,
+    _req: HttpRequest,
 ) -> HttpResponse {
-    println!("{:?}", req);
-
-    let mut map: Map<String, Value> = topics.lock().unwrap().clone();
-    map.insert("/int".to_string(), json!(2));
-    map.insert("/str".to_string(), json!("hello"));
-    map.insert("/dec".to_string(), json!(9.22));
-
+    let map = topics.lock().unwrap().clone();
     let body = serde_json::to_string_pretty(&map).unwrap();
-    HttpResponse::Ok().body(body)
+    return HttpResponse::Ok().body(body);
+}
+
+// Publish to topic (creating new topic if none of the same name exists, else update the data)
+async fn publish_topic(
+    topics: web::Data<Mutex<Map<String, Value>>>,
+    body: web::Bytes,
+) -> Result<HttpResponse, Error> {
+    let result = serde_json::from_str(std::str::from_utf8(&body).unwrap());
+    let publish_req: Info = match result {
+        Ok(v) => v,
+        Err(e) => Info {
+            topic: "_".to_string(),
+            data: json!(e.to_string()),
+        },
+    };
+    //println!("[ SERVER ]: POST Req: {:?}", publish_req);
+    topics
+        .lock()
+        .unwrap()
+        .insert(publish_req.topic, publish_req.data);
+    let map = topics.lock().unwrap().clone();
+    let body = serde_json::to_string_pretty(&map).unwrap();
+    return Ok(HttpResponse::Ok().json(body));
 }
 
 #[actix_web::main]
 pub async fn start_server() {
-    std::env::set_var("RUST_LOG", "actix_web=info");
-    env_logger::init();
+    let topics: web::Data<Mutex<Map<String, Value>>> = web::Data::new(Mutex::new(Map::new()));
 
     let (tx, _) = mpsc::channel();
 
@@ -32,15 +54,10 @@ pub async fn start_server() {
         let sys = System::new("http-server");
 
         let srv = HttpServer::new(move || {
-            let topics: web::Data<Mutex<Map<String, Value>>> =
-                web::Data::new(Mutex::new(Map::new()));
-
             App::new()
                 .app_data(topics.clone()) // add shared state
-                // enable logger
-                .wrap(middleware::Logger::default())
-                // register simple handler
-                .service(web::resource("/").to(get_topics))
+                .service(web::resource("/").route(web::get().to(get_topics)))
+                .service(web::resource("/publish").route(web::post().to(publish_topic)))
         })
         .bind("127.0.0.1:8080")?
         .run();

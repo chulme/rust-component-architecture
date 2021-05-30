@@ -19,7 +19,7 @@ pub fn create_components(_: TokenStream) -> TokenStream {
         res.push_str(&format!(
             "
             let component_{0} = {0}::{1} {{
-                interface: Arc::clone(&interface),
+                interface: interface.clone(),
             }};
             components.push(Box::new(component_{0}));
             ",
